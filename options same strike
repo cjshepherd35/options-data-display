@@ -1,0 +1,99 @@
+import numpy as np
+import pandas as pd
+import yfinance as yf
+
+class Options:
+    def __init__(self, sym, num):
+        self.num = num
+        self.sym = sym
+        
+    def make_table(self,num, optiondates):
+        list_out = []
+        month1 = callsdf[0]
+
+        for i in range(len(month1['strike'])):
+            list_in = []
+            
+            for k in range(len(optiondates)):
+                for j in range(len(callsdf[k]['strike'])):
+                    if month1['strike'][i] == callsdf[k]['strike'][j]:
+                        
+                        b = callsdf[k].iloc[j]
+                        
+                        list_in.append(b)
+                        break
+            list_in = pd.DataFrame(list_in)
+
+            list_out.append(list_in)
+        return list_out[self.num], list_out
+
+
+    def begin(self, sym):
+        stock = yf.Ticker(sym)
+        optiondates = stock.options
+        return optiondates
+
+
+    def get_option_data(self,optiondates,sym,calls=True,puts=False):
+#         stock = yf.Ticker(sym)
+#         self.optiondates = stock.options
+
+        if calls==True:
+            alist = []
+            for i in range(len(optiondates)):
+                aoption = yf.Ticker(sym).option_chain(optiondates[i])
+                alist.append(aoption)
+            stockdf = pd.DataFrame(alist)
+            callsdf = stockdf['calls']
+            for i in range(len(optiondates)):
+                callsdf[i]['expiration'] = optiondates[i]
+
+            return callsdf 
+        if puts==True:
+            
+            alist = []
+            for i in range(len(stock.options)):
+                aoption = yf.Ticker.option_chain(optiondates[i])
+                alist.append(aoption)
+            stockdf = pd.DataFrame(alist)
+            putsdf = stockdf['puts']
+            for i in range(len(optiondates)):
+                putsdf[i]['expiration'] = optiondates[i]
+            
+            return putsdf
+
+
+
+me = None
+sym = 'AXL'#input
+num = 5 # dataframe number output you want
+optiondates = Options.begin(me,sym)
+callsdf = Options.get_option_data(me,optiondates,sym)
+forgraph,list_of_df = Options.make_table(me,num,optiondates)
+forgraph
+
+
+
+import matplotlib.pyplot as plt
+# avg = (forgraph['bid'] + forgraph['ask'])/2
+
+fig, axes = plt.subplots(nrows=len(list_of_df),ncols=1,figsize=(10,len(list_of_df)*2))
+
+fig.tight_layout()
+me = None
+sym = 'AXL'
+optiondates = Options.begin(me,sym)
+callsdf = Options.get_option_data(me,optiondates,sym)
+
+for i in range(len(list_of_df)):
+    
+    num = i # dataframe number output you want
+    
+
+
+    forgraph,_ = Options.make_table(me,num,optiondates)
+    forgraph
+    avg = forgraph['bid'] #(forgraph['bid'] + forgraph['ask'])/2
+
+    axes[i].plot(forgraph['expiration'],avg)
+    axes[i].set_title(str(forgraph['strike'].unique()))
